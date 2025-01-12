@@ -1,22 +1,88 @@
-import React, {useRef, useState} from "react";
+import React, { useRef, useState, useEffect } from "react";
+import * as tf from "@tensorflow/tfjs";
 
 const SirenRecognition: React.FC = () => {
     const [isListening, setIsListening] = useState(false);
     const [result, setResult] = useState<string>("Waiting for results...");
+    const [classNames, setClassNames] = useState<string[]>([]);
     const audioContextRef = useRef<AudioContext | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const yamnetModelRef = useRef<tf.GraphModel | null>(null);
 
-    const getApiHost = () => {
-        const url = new URL(window.location.href);
-        const pathSegments = url.pathname.split('/');
-        return `${pathSegments[1]}`;
+    // Load YAMNet model
+    const loadYamnetModel = async () => {
+        try {
+            const model = await tf.loadGraphModel('/yamnet_model/model.json');
+            yamnetModelRef.current = model;
+            console.log("YAMNet model loaded successfully.");
+        } catch (error) {
+            console.error("Error loading YAMNet model:", error);
+            alert("Failed to load the YAMNet model.");
+        }
+    };
+
+    // Load class names from the local CSV file
+    const loadClassNames = async () => {
+        try {
+            const response = await fetch("/yamnet_class_map.csv"); // Assuming the file is in the public folder
+            const csvText = await response.text();
+
+            // Parse CSV and extract class names
+            const lines = csvText.split("\n").slice(1); // Skip the header
+            const names = lines.map((line) => {
+                const columns = line.split(",");
+                return columns[2]?.trim(); // The third column contains the class name
+            });
+
+            setClassNames(names);
+            console.log("Class names loaded successfully.");
+        } catch (error) {
+            console.error("Error loading class names:", error);
+            alert("Failed to load class names.");
+        }
+    };
+
+    useEffect(() => {
+        loadYamnetModel();
+        loadClassNames();
+    }, []);
+
+    const preprocessAudio = async (audioBlob) => {
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const audioContext = new AudioContext();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Get the first channel's audio data
+        const audioData = audioBuffer.getChannelData(0);
+        const targetSampleRate = 16000;
+
+        // Resample to 16 kHz if needed
+        if (audioBuffer.sampleRate !== targetSampleRate) {
+            const ratio = targetSampleRate / audioBuffer.sampleRate;
+            const newLength = Math.round(audioData.length * ratio);
+            const resampled = new Float32Array(newLength);
+
+            for (let i = 0; i < newLength; i++) {
+                const originalIndex = i / ratio;
+                const lowIndex = Math.floor(originalIndex);
+                const highIndex = Math.min(lowIndex + 1, audioData.length - 1);
+                const weight = originalIndex - lowIndex;
+                resampled[i] = audioData[lowIndex] * (1 - weight) + audioData[highIndex] * weight;
+            }
+            return resampled;
+        }
+        return audioData;
     };
 
     const startListening = async () => {
         if (!navigator.mediaDevices.getUserMedia) {
             alert("Your browser does not support microphone access.");
             return;
+        }
+
+        if (!yamnetModelRef.current) {
+            await loadYamnetModel();
         }
 
         try {
@@ -29,31 +95,38 @@ const SirenRecognition: React.FC = () => {
             const audioChunks: Blob[] = [];
 
             // Handle data when the media recorder has audio chunks
-            mediaRecorder.ondataavailable = (event) => {
+            mediaRecorder.ondataavailable = async (event) => {
                 audioChunks.push(event.data);
-            };
 
-            // Send audio every 5 seconds
-            mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-                const formData = new FormData();
-                formData.append("audio", audioBlob, "audio.wav");
 
-                try {
-                    const response = await fetch(`https://${getApiHost()}:5000/siren-detection`, {
-                        method: "POST",
-                        body: formData,
-                    });
+                // Convert audio to tensor
+                const waveform = tf.tensor(await preprocessAudio(audioBlob));
 
-                    const data = await response.json();
-                    setResult(data.result);
-                } catch (error) {
-                    console.error("Error sending audio data to backend:", error);
-                    setResult("Error processing audio.");
+                const model = yamnetModelRef.current;
+                if (model) {
+                    try {
+                        // Predict using YAMNet
+
+                        const [scores] = model.execute({ waveform }) as tf.Tensor[];
+
+                        // Get the class with the highest score
+                        const segmentClasses = scores.argMax(1).dataSync(); // Get segment-wise predictions
+                        const predictedClasses = Array.from(segmentClasses).map(
+                            (idx) => classNames[idx]
+                        );
+                        console.log(predictedClasses)
+                        const isSiren = predictedClasses.some((cls) => cls.toLowerCase().includes("siren"));
+                        const result = isSiren ? "Siren detected" : "No siren detected";
+
+                        setResult(`Detected: ${result}`);
+                    } catch (error) {
+                        console.error("Error during prediction:", error);
+                        setResult("Error processing audio.");
+                    }
                 }
 
-                // Clear chunks after sending
-                audioChunks.length = 0;
+                audioChunks.length = 0; // Clear chunks after processing
             };
 
             // Start the media recorder and schedule intervals
@@ -94,7 +167,7 @@ const SirenRecognition: React.FC = () => {
 
     return (
         <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2 style={{marginBottom: "16px"}}>Siren Recognition</h2>
+            <h2 style={{ marginBottom: "16px" }}>Siren Recognition</h2>
             <button
                 onClick={isListening ? stopListening : startListening}
                 style={{
