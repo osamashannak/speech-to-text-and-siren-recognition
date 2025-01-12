@@ -34,7 +34,7 @@ const SirenRecognition: React.FC = () => {
                 formData.append("audio", audioBlob, "audio.wav");
 
                 try {
-                    const response = await fetch("http://192.168.1.12:5000/siren-detection", {
+                    const response = await fetch("https://192.168.1.12:5000/siren-detection", {
                         method: "POST",
                         body: formData,
                     });

@@ -69,4 +69,5 @@ def siren_detection():
         return jsonify({'error': f"An unexpected error occurred: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='192.168.1.12')
+    app.run(host='0.0.0.0', port=5000, ssl_context=('192.168.1.12.pem', '192.168.1.12-key.pem'))
+
