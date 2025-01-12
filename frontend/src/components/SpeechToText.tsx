@@ -61,17 +61,19 @@ const SpeechToText: React.FC = () => {
     };
 
     return (
-        <div className="speech-to-text">
-            <h2>Speech-to-Text</h2>
+        <div className="block">
+            <h2>💬 Speech-to-Text</h2>
+            <p className={"description"}>Read what's spoken to you.</p>
+            <span className={"language"}>Select language:</span>
             <select onChange={handleLanguageChange} value={language}>
                 <option value="ar-SA">Arabic</option>
                 <option value="en-US">English</option>
             </select>
-            <button onClick={toggleListening}>
+            <button className={"button"} onClick={toggleListening}>
                 {listening ? "Stop Listening" : "Start Listening"}
             </button>
-            <div className={`transcription-box ${language === "ar-SA" ? "rtl" : "ltr"}`}>
-                <p className="transcription-text">{transcription}</p>
+            <div>
+                <textarea readOnly dir={"auto"} className="transcription-text" value={transcription}/>
             </div>
         </div>
     );

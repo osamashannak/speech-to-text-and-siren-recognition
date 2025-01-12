@@ -107,11 +107,9 @@ const SirenRecognition: React.FC = () => {
                 if (model) {
                     try {
                         // Predict using YAMNet
-
                         const [scores] = model.execute({ waveform }) as tf.Tensor[];
 
-                        // Get the class with the highest score
-                        const segmentClasses = scores.argMax(1).dataSync(); // Get segment-wise predictions
+                        const segmentClasses = scores.argMax(1).dataSync();
                         const predictedClasses = Array.from(segmentClasses).map(
                             (idx) => classNames[idx]
                         );
@@ -119,7 +117,7 @@ const SirenRecognition: React.FC = () => {
                         const isSiren = predictedClasses.some((cls) => cls.toLowerCase().includes("siren"));
                         const result = isSiren ? "Siren detected" : "No siren detected";
 
-                        setResult(`Detected: ${result}`);
+                        setResult(result);
                     } catch (error) {
                         console.error("Error during prediction:", error);
                         setResult("Error processing audio.");
@@ -166,8 +164,16 @@ const SirenRecognition: React.FC = () => {
     };
 
     return (
-        <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2 style={{ marginBottom: "16px" }}>Siren Recognition</h2>
+        <div className={"block"}>
+            <h2>🚨 Siren Recognition</h2>
+            <p className={"description"}>Detect sirens around you.</p>
+            <div className={isListening ? "affirmation" : "warning"}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                          d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8"/>
+                </svg>
+                {!isListening ? "You aren't being protected." : "You are being protected."}
+            </div>
             <button
                 onClick={isListening ? stopListening : startListening}
                 style={{
@@ -180,9 +186,9 @@ const SirenRecognition: React.FC = () => {
                     cursor: "pointer",
                 }}
             >
-                {isListening ? "Stop Listening" : "Start Listening"}
+                {isListening ? "Disable" : "Enable"}
             </button>
-            <p id="result" style={{ fontSize: "24px", color: "red", marginTop: "20px" }}>
+            <p id="result" style={{fontSize: "24px", color: "red", marginTop: "20px"}}>
                 {result}
             </p>
         </div>

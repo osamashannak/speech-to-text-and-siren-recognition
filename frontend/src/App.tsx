@@ -1,20 +1,26 @@
 import React from "react";
 import SpeechToText from "./components/SpeechToText";
 import SirenDetection from "./components/SirenRecognition.tsx";
+import logo from "./assets/logo.jpeg";
+import slogan from "./assets/slogan.jpeg";
+import schoolLogo from "./assets/school_logo.jpeg";
 
 const App: React.FC = () => {
     return (
-        <div>
+        <main>
             <div className={"nav"}>
-                <h1 className={"title"}>Speech-to-Text and Siren Recognition</h1>
+                <img className={"logo"} src={logo} alt={"Logo"}/>
+                <img className={"slogan"} src={slogan} alt={"Logo"}/>
             </div>
-            <main>
-                <div>
-                    <SirenDetection />
-                    <SpeechToText/>
+            <div className={"main"}>
+                <div className={"block"}>
+                    <img className={"school-logo"} src={schoolLogo} alt={"School Logo"}/>
+
                 </div>
-            </main>
-        </div>
+                <SirenDetection/>
+                <SpeechToText/>
+            </div>
+        </main>
     );
 };
 
