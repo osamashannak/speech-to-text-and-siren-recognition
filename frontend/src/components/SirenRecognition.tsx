@@ -57,7 +57,7 @@ const SirenRecognition: React.FC = () => {
                     mediaRecorder.stop();
                     mediaRecorder.start();
                 }
-            }, 5000); // 5-second intervals
+            }, 2500); // 2.5-second intervals
 
             setIsListening(true);
         } catch (err) {
