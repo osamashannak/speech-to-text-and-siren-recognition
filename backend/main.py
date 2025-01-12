@@ -6,6 +6,7 @@ import pandas as pd
 from flask_cors import CORS
 import tempfile
 from pydub import AudioSegment
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -68,6 +69,8 @@ def siren_detection():
     except Exception as e:
         return jsonify({'error': f"An unexpected error occurred: {str(e)}"}), 500
 
+ip = sys.argv[1]
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, ssl_context=('192.168.1.12.pem', '192.168.1.12-key.pem'))
+    app.run(host='0.0.0.0', port=5000, ssl_context=(ip + '.pem', ip+'-key.pem'))
 

@@ -7,6 +7,12 @@ const SirenRecognition: React.FC = () => {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    const getApiHost = () => {
+        const url = new URL(window.location.href);
+        const pathSegments = url.pathname.split('/');
+        return `${pathSegments[1]}`;
+    };
+
     const startListening = async () => {
         if (!navigator.mediaDevices.getUserMedia) {
             alert("Your browser does not support microphone access.");
@@ -34,7 +40,7 @@ const SirenRecognition: React.FC = () => {
                 formData.append("audio", audioBlob, "audio.wav");
 
                 try {
-                    const response = await fetch("https://192.168.1.12:5000/siren-detection", {
+                    const response = await fetch(`https://${getApiHost()}:5000/siren-detection`, {
                         method: "POST",
                         body: formData,
                     });
