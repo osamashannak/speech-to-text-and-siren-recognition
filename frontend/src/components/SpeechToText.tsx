@@ -4,12 +4,13 @@ const SpeechToText: React.FC = () => {
     const [transcription, setTranscription] = useState<string>("");
     const [listening, setListening] = useState<boolean>(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+    const [language, setLanguage] = useState<string>("ar-SA");
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognitionInstance = new SpeechRecognition();
-        recognitionInstance.lang = "ar-SA"; // Set the desired language
+        recognitionInstance.lang = language;
         recognitionInstance.interimResults = true;
         recognitionInstance.continuous = true;
 
@@ -20,7 +21,7 @@ const SpeechToText: React.FC = () => {
             recognitionInstance.removeEventListener('result', onSpeak);
             recognitionInstance.stop();
         };
-    }, []);
+    }, [language]);
 
     function onSpeak(event: SpeechRecognitionEvent) {
         let transcript = "";
@@ -55,13 +56,21 @@ const SpeechToText: React.FC = () => {
         setListening(!listening);
     };
 
+    const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setLanguage(event.target.value);
+    };
+
     return (
         <div className="speech-to-text">
             <h2>Speech-to-Text</h2>
+            <select onChange={handleLanguageChange} value={language}>
+                <option value="ar-SA">Arabic</option>
+                <option value="en-US">English</option>
+            </select>
             <button onClick={toggleListening}>
                 {listening ? "Stop Listening" : "Start Listening"}
             </button>
-            <div className="transcription-box">
+            <div className={`transcription-box ${language === "ar-SA" ? "rtl" : "ltr"}`}>
                 <p className="transcription-text">{transcription}</p>
             </div>
         </div>
