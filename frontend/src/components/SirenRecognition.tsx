@@ -48,7 +48,7 @@ const SirenRecognition: React.FC = () => {
         loadClassNames();
     }, []);
 
-    const preprocessAudio = async (audioBlob) => {
+    const preprocessAudio = async (audioBlob: Blob) => {
         const arrayBuffer = await audioBlob.arrayBuffer();
         const audioContext = new AudioContext();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
