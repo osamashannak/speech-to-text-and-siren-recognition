@@ -14,7 +14,7 @@ const App: React.FC = () => {
             </div>
             <div className={"main"}>
                 <div className={"block"}>
-                    <img className={"school-logo"} src={schoolLogo} alt={"School Logo"}/>
+                    <img className={"school-logo"} width={300} src={schoolLogo} alt={"School Logo"}/>
 
                 </div>
                 <SirenDetection/>
